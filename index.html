@@ -257,8 +257,7 @@ function generate() {
   var ecLevel = refs.ecLevel.value;
   var cellSize = parseInt(refs.cellSize.value) || 8;
 
-  if (refs.splitMode.checked) {
-    if (text.length < 3) { alert('Text too short to split.'); return; }
+  if (refs.splitMode.checked && text.length >= 3) {
     generateSplit(text, ecLevel, cellSize);
   } else {
     generateSingle(text, ecLevel, cellSize);
