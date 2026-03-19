@@ -41,6 +41,13 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 .qr-container canvas { display: block; }
 .stats { margin-top: 0.75rem; font-size: 0.8rem; color: var(--muted); }
 .char-count { text-align: right; font-size: 0.75rem; color: var(--muted); margin-top: 0.25rem; }
+.toggle-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; font-size: 0.85rem; cursor: pointer; user-select: none; color: var(--muted); }
+.toggle-row input { accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer; }
+.toggle-row.active { color: var(--text); }
+.split-output { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; margin-top: 1.5rem; }
+.split-part { text-align: center; }
+.split-part .part-label { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.4rem; }
+.split-part .qr-container { padding: 10px; }
 .hidden { display: none; }
 
 /* Scanner */
@@ -95,6 +102,9 @@ footer a { color: var(--accent); text-decoration: none; }
       <input type="number" id="cellSize" value="8" min="2" max="20">
     </div>
   </div>
+  <label class="toggle-row" id="splitToggle">
+    <input type="checkbox" id="splitMode"> Split into 3 parts (random cut, min 15% each)
+  </label>
   <div class="actions">
     <button class="btn-primary" onclick="generate()">Generate</button>
     <button class="btn-secondary" id="downloadBtn" onclick="downloadQR()" disabled>Download PNG</button>
@@ -103,6 +113,7 @@ footer a { color: var(--accent); text-decoration: none; }
     <div class="qr-container" id="qrContainer"></div>
     <div class="stats" id="stats"></div>
   </div>
+  <div class="split-output hidden" id="splitOutput"></div>
 </div>
 
 <!-- Scan Tab -->
@@ -165,9 +176,17 @@ var refs = {
   scanResult: $('scanResult'), resultText: $('resultText'), scanStatus: $('scanStatus')
 };
 
+refs.splitMode = $('splitMode');
+refs.splitOutput = $('splitOutput');
+refs.splitToggle = $('splitToggle');
+
 var cameraSupported = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
 var videoStream = null;
 var animFrame = null;
+
+refs.splitMode.addEventListener('change', function() {
+  refs.splitToggle.classList.toggle('active', this.checked);
+});
 
 // --- Tabs ---
 function switchTab(tab) {
@@ -219,14 +238,38 @@ function renderQR(qr, cellSize) {
   return canvas;
 }
 
+function splitText3(text) {
+  // Random split: each part gets at least 15%, remaining 55% distributed randomly.
+  var len = text.length;
+  var base = Math.max(1, Math.floor(len * 0.15));
+  var extra = len - base * 3;
+  // Distribute extra chars randomly among 3 parts (simplex sampling)
+  var r1 = Math.floor(Math.random() * (extra + 1));
+  var r2 = Math.floor(Math.random() * (extra - r1 + 1));
+  var sizes = [base + r1, base + r2, base + (extra - r1 - r2)];
+  return [text.slice(0, sizes[0]), text.slice(sizes[0], sizes[0] + sizes[1]), text.slice(sizes[0] + sizes[1])];
+}
+
 function generate() {
   var text = refs.input.value;
   if (!text) return;
 
-  var result = findMinQR(text, refs.ecLevel.value);
+  var ecLevel = refs.ecLevel.value;
+  var cellSize = parseInt(refs.cellSize.value) || 8;
+
+  if (refs.splitMode.checked) {
+    if (text.length < 3) { alert('Text too short to split.'); return; }
+    generateSplit(text, ecLevel, cellSize);
+  } else {
+    generateSingle(text, ecLevel, cellSize);
+  }
+}
+
+function generateSingle(text, ecLevel, cellSize) {
+  refs.splitOutput.classList.add('hidden');
+  var result = findMinQR(text, ecLevel);
   if (!result) { alert('Data too large for QR code.'); return; }
 
-  var cellSize = parseInt(refs.cellSize.value) || 8;
   var canvas = renderQR(result.qr, cellSize);
   var count = result.qr.getModuleCount();
 
@@ -234,18 +277,55 @@ function generate() {
   refs.qrContainer.appendChild(canvas);
   refs.genOutput.classList.remove('hidden');
   refs.stats.textContent = 'Version ' + result.version + ' (' + count + '\u00d7' + count
-    + ') \u00b7 EC=' + refs.ecLevel.value + ' \u00b7 ' + new Blob([text]).size
+    + ') \u00b7 EC=' + ecLevel + ' \u00b7 ' + new Blob([text]).size
     + ' bytes \u00b7 ' + canvas.width + '\u00d7' + canvas.height + 'px';
   refs.downloadBtn.disabled = false;
 }
 
+function generateSplit(text, ecLevel, cellSize) {
+  refs.genOutput.classList.add('hidden');
+  var parts = splitText3(text);
+  refs.splitOutput.innerHTML = '';
+
+  for (var i = 0; i < 3; i++) {
+    var result = findMinQR(parts[i], ecLevel);
+    if (!result) { alert('Part ' + (i + 1) + ' too large for QR code.'); return; }
+    var canvas = renderQR(result.qr, cellSize);
+    var div = document.createElement('div');
+    div.className = 'split-part';
+    var label = document.createElement('div');
+    label.className = 'part-label';
+    label.textContent = 'Part ' + (i + 1) + ' (' + parts[i].length + ' chars)';
+    var wrap = document.createElement('div');
+    wrap.className = 'qr-container';
+    wrap.appendChild(canvas);
+    div.appendChild(label);
+    div.appendChild(wrap);
+    refs.splitOutput.appendChild(div);
+  }
+
+  refs.splitOutput.classList.remove('hidden');
+  refs.downloadBtn.disabled = false;
+}
+
 function downloadQR() {
-  var canvas = refs.qrContainer.querySelector('canvas');
-  if (!canvas) return;
-  var a = document.createElement('a');
-  a.download = 'qrcode.png';
-  a.href = canvas.toDataURL('image/png');
-  a.click();
+  if (refs.splitMode.checked) {
+    // Download all 3 parts
+    var canvases = refs.splitOutput.querySelectorAll('canvas');
+    canvases.forEach(function(canvas, i) {
+      var a = document.createElement('a');
+      a.download = 'qrcode-part' + (i + 1) + '.png';
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    });
+  } else {
+    var canvas = refs.qrContainer.querySelector('canvas');
+    if (!canvas) return;
+    var a = document.createElement('a');
+    a.download = 'qrcode.png';
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+  }
 }
 
 // --- Camera ---
