@@ -320,8 +320,10 @@ function decodeFromVideo(video) {
 
 // --- File decode ---
 function decodeFromImage(file) {
-  if (!file.type.startsWith('image/')) { setStatus('Not an image file.'); return; }
+  // file.type can be empty on some mobile browsers, so only reject known non-image types
+  if (file.type && !file.type.startsWith('image/')) { setStatus('Not an image file.'); return; }
   setStatus('Decoding...');
+  var url = URL.createObjectURL(file);
   var img = new Image();
   img.onload = function() {
     var canvas = document.createElement('canvas');
@@ -332,9 +334,13 @@ function decodeFromImage(file) {
     var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     var result = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
     result ? showResult(result.data) : setStatus('No QR code found in image.');
-    URL.revokeObjectURL(img.src);
+    URL.revokeObjectURL(url);
   };
-  img.src = URL.createObjectURL(file);
+  img.onerror = function() {
+    setStatus('Failed to load image.');
+    URL.revokeObjectURL(url);
+  };
+  img.src = url;
 }
 
 refs.fileInput.addEventListener('change', function() {
@@ -358,12 +364,13 @@ function showResult(text) {
 
 function copyResult() {
   var text = refs.resultText.textContent;
-  if (navigator.clipboard) {
+  try {
+    // clipboard API may exist but reject on HTTP (non-secure context)
     navigator.clipboard.writeText(text).then(
       function() { setStatus('Copied!', true); },
       function() { selectResultText(); }
     );
-  } else {
+  } catch (e) {
     selectResultText();
   }
 }
