@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Offline QR Tool</title>
-<meta name="description" content="Secure, offline QR code generator and scanner. All data stays in your browser.">
+<title>AirQR — Air-Gapped QR Tool</title>
+<meta name="description" content="AirQR: Secure, air-gapped QR code generator and scanner. All data stays in your browser. Zero network requests.">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:;">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -65,8 +65,8 @@ footer a { color: var(--accent); text-decoration: none; }
 </head>
 <body>
 
-<h1>Offline QR Tool</h1>
-<p class="subtitle">Generate &amp; scan QR codes. All data stays in your browser.</p>
+<h1>AirQR</h1>
+<p class="subtitle">Air-gapped QR tool. All data stays in your browser.</p>
 
 <div class="tabs">
   <button class="tab active" onclick="switchTab('generate')">Generate</button>
@@ -147,7 +147,7 @@ footer a { color: var(--accent); text-decoration: none; }
 
 <footer>
   <p>Generate: <a href="https://github.com/nickelc/qrloop">qrcode-generator</a> (MIT) &middot; Scan: <a href="https://github.com/nickelc/qrloop">jsQR</a> (Apache-2.0)</p>
-  <p><a href="https://github.com/SinlinLi/offline-qr-generator">Source on GitHub</a></p>
+  <p><a href="https://github.com/SinlinLi/airqr">Source on GitHub</a></p>
 </footer>
 
 <script src="qrcode.min.js"></script>
