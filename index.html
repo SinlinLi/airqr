@@ -3,15 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Offline QR Generator</title>
-<meta name="description" content="Secure, offline QR code generator. All data stays in your browser.">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+<title>Offline QR Tool</title>
+<meta name="description" content="Secure, offline QR code generator and scanner. All data stays in your browser.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:;">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root { --bg: #0a0a0a; --surface: #141414; --border: #262626; --text: #e5e5e5; --muted: #737373; --accent: #10b981; }
+:root { --bg: #0a0a0a; --surface: #141414; --border: #262626; --text: #e5e5e5; --muted: #737373; --accent: #10b981; --danger: #ef4444; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 2rem 1rem; }
 h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.25rem; }
-.subtitle { color: var(--muted); font-size: 0.85rem; margin-bottom: 2rem; }
+.subtitle { color: var(--muted); font-size: 0.85rem; margin-bottom: 1.5rem; }
+
+/* Tabs */
+.tabs { display: flex; gap: 0; margin-bottom: 1.5rem; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.tab { padding: 0.6rem 1.5rem; font-size: 0.9rem; font-weight: 500; cursor: pointer; background: transparent; color: var(--muted); border: none; transition: all 0.2s; }
+.tab:hover { color: var(--text); }
+.tab.active { background: var(--accent); color: #000; }
+
+/* Card */
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; width: 100%; max-width: 480px; }
 .field { margin-bottom: 1rem; }
 .field label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em; }
@@ -24,40 +32,62 @@ select:focus, input[type="number"]:focus { border-color: var(--accent); }
 .actions { display: flex; gap: 0.75rem; margin-top: 1rem; }
 button { flex: 1; padding: 0.7rem; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: opacity 0.2s; }
 button:hover { opacity: 0.85; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
 .btn-primary { background: var(--accent); color: #000; }
 .btn-secondary { background: var(--border); color: var(--text); }
+.btn-danger { background: var(--danger); color: #fff; }
 .output { margin-top: 1.5rem; text-align: center; }
 .qr-container { display: inline-block; background: #fff; padding: 16px; border-radius: 8px; }
 .qr-container canvas { display: block; }
 .stats { margin-top: 0.75rem; font-size: 0.8rem; color: var(--muted); }
-.badge { display: inline-flex; align-items: center; gap: 0.4rem; background: #052e16; color: var(--accent); font-size: 0.75rem; padding: 0.3rem 0.7rem; border-radius: 20px; margin-top: 1.5rem; }
-.badge::before { content: ''; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
 .char-count { text-align: right; font-size: 0.75rem; color: var(--muted); margin-top: 0.25rem; }
 .hidden { display: none; }
-footer { margin-top: 2rem; font-size: 0.75rem; color: var(--muted); text-align: center; }
+
+/* Scanner */
+.scanner-area { position: relative; width: 100%; border-radius: 8px; overflow: hidden; background: #000; }
+.scanner-area video { width: 100%; display: block; border-radius: 8px; }
+.scanner-area canvas { display: none; }
+.scanner-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 60%; height: 0; padding-bottom: 60%; border: 2px solid var(--accent); border-radius: 12px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.4); pointer-events: none; }
+.drop-zone { border: 2px dashed var(--border); border-radius: 8px; padding: 2rem; text-align: center; color: var(--muted); cursor: pointer; transition: border-color 0.2s; }
+.drop-zone:hover, .drop-zone.dragover { border-color: var(--accent); color: var(--text); }
+.drop-zone input { display: none; }
+.result-box { margin-top: 1rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; word-break: break-all; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.9rem; text-align: left; max-height: 200px; overflow-y: auto; user-select: all; }
+.result-actions { display: flex; gap: 0.75rem; margin-top: 0.75rem; }
+.scan-status { margin-top: 0.75rem; font-size: 0.8rem; color: var(--muted); text-align: center; }
+.scan-status.success { color: var(--accent); }
+
+/* Badge & Footer */
+.badge { display: inline-flex; align-items: center; gap: 0.4rem; background: #052e16; color: var(--accent); font-size: 0.75rem; padding: 0.3rem 0.7rem; border-radius: 20px; margin-top: 1.5rem; }
+.badge::before { content: ''; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
+footer { margin-top: 1.5rem; font-size: 0.75rem; color: var(--muted); text-align: center; line-height: 1.6; }
 footer a { color: var(--accent); text-decoration: none; }
 </style>
 </head>
 <body>
 
-<h1>Offline QR Generator</h1>
-<p class="subtitle">All data stays in your browser. Zero network requests.</p>
+<h1>Offline QR Tool</h1>
+<p class="subtitle">Generate &amp; scan QR codes. All data stays in your browser.</p>
 
-<div class="card">
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('generate')">Generate</button>
+  <button class="tab" onclick="switchTab('scan')">Scan</button>
+</div>
+
+<!-- Generate Tab -->
+<div class="card" id="generateTab">
   <div class="field">
     <label>Data</label>
     <textarea id="input" placeholder="Paste text, URL, private key, seed phrase..." spellcheck="false" autocomplete="off"></textarea>
     <div class="char-count"><span id="charCount">0</span> chars &middot; <span id="byteCount">0</span> bytes</div>
   </div>
-
   <div class="row">
     <div class="field">
       <label>Error Correction</label>
       <select id="ecLevel">
-        <option value="L">L — 7% recovery</option>
-        <option value="M" selected>M — 15% recovery</option>
-        <option value="Q">Q — 25% recovery</option>
-        <option value="H">H — 30% recovery</option>
+        <option value="L">L — 7%</option>
+        <option value="M" selected>M — 15%</option>
+        <option value="Q">Q — 25%</option>
+        <option value="H">H — 30%</option>
       </select>
     </div>
     <div class="field">
@@ -65,52 +95,89 @@ footer a { color: var(--accent); text-decoration: none; }
       <input type="number" id="cellSize" value="8" min="2" max="20">
     </div>
   </div>
-
   <div class="actions">
     <button class="btn-primary" onclick="generate()">Generate</button>
-    <button class="btn-secondary" id="downloadBtn" onclick="download()" disabled>Download PNG</button>
+    <button class="btn-secondary" id="downloadBtn" onclick="downloadQR()" disabled>Download PNG</button>
   </div>
-
-  <div class="output hidden" id="output">
+  <div class="output hidden" id="genOutput">
     <div class="qr-container" id="qrContainer"></div>
     <div class="stats" id="stats"></div>
   </div>
 </div>
 
+<!-- Scan Tab -->
+<div class="card hidden" id="scanTab">
+  <!-- Camera -->
+  <div class="field">
+    <label>Camera</label>
+    <div class="scanner-area hidden" id="scannerArea">
+      <video id="scanVideo" playsinline></video>
+      <canvas id="scanCanvas"></canvas>
+      <div class="scanner-overlay"></div>
+    </div>
+    <div class="actions" id="cameraActions">
+      <button class="btn-primary" id="cameraBtn" onclick="toggleCamera()">Start Camera</button>
+    </div>
+  </div>
+
+  <!-- File Upload -->
+  <div class="field">
+    <label>Or upload image</label>
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+      <input type="file" id="fileInput" accept="image/*">
+      Drop image here or click to select
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div class="hidden" id="scanResult">
+    <div class="field">
+      <label>Result</label>
+      <div class="result-box" id="resultText"></div>
+      <div class="result-actions">
+        <button class="btn-primary" onclick="copyResult()">Copy</button>
+        <button class="btn-secondary" onclick="clearResult()">Clear</button>
+      </div>
+    </div>
+  </div>
+  <div class="scan-status" id="scanStatus"></div>
+</div>
+
 <div class="badge">Offline &amp; Secure — CSP blocks all external connections</div>
 
 <footer>
-  <p>QR lib: <a href="https://github.com/nickelc/qrloop" target="_blank">qrcode-generator</a> by Kazuhiko Arase (MIT)</p>
-  <p>Source: <a href="https://github.com/nickelc/qrloop" id="repoLink" target="_blank">GitHub</a></p>
+  <p>Generate: <a href="https://github.com/nickelc/qrloop">qrcode-generator</a> (MIT) &middot; Scan: <a href="https://github.com/nickelc/qrloop">jsQR</a> (Apache-2.0)</p>
+  <p><a href="https://github.com/SinlinLi/offline-qr-generator">Source on GitHub</a></p>
 </footer>
 
 <script src="qrcode.min.js"></script>
+<script src="jsqr.min.js"></script>
 <script>
+// --- Tab switching ---
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(function(t, i) {
+    t.classList.toggle('active', (tab === 'generate' ? i === 0 : i === 1));
+  });
+  document.getElementById('generateTab').classList.toggle('hidden', tab !== 'generate');
+  document.getElementById('scanTab').classList.toggle('hidden', tab !== 'scan');
+  if (tab === 'generate') stopCamera();
+}
+
+// --- Generate ---
 var inputEl = document.getElementById('input');
-var charCountEl = document.getElementById('charCount');
-var byteCountEl = document.getElementById('byteCount');
-
 inputEl.addEventListener('input', function() {
-  charCountEl.textContent = this.value.length;
-  byteCountEl.textContent = new Blob([this.value]).size;
+  document.getElementById('charCount').textContent = this.value.length;
+  document.getElementById('byteCount').textContent = new Blob([this.value]).size;
 });
-
-// auto-generate on Enter (Ctrl/Cmd+Enter)
 inputEl.addEventListener('keydown', function(e) {
-  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-    e.preventDefault();
-    generate();
-  }
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); generate(); }
 });
 
 function generate() {
   var text = inputEl.value;
   if (!text) return;
-
   var ecLevel = document.getElementById('ecLevel').value;
   var cellSize = parseInt(document.getElementById('cellSize').value) || 8;
-
-  // auto-detect minimum QR version
   var qr = null;
   for (var typeNum = 1; typeNum <= 40; typeNum++) {
     try {
@@ -118,57 +185,189 @@ function generate() {
       qr.addData(text);
       qr.make();
       break;
-    } catch (e) {
-      qr = null;
-    }
+    } catch (e) { qr = null; }
   }
-
-  if (!qr) {
-    alert('Data too large for QR code. Try reducing text or lowering error correction level.');
-    return;
-  }
-
+  if (!qr) { alert('Data too large for QR code.'); return; }
   var container = document.getElementById('qrContainer');
   container.innerHTML = '';
-
   var count = qr.getModuleCount();
   var size = count * cellSize;
   var canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
   var ctx = canvas.getContext('2d');
-
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, size, size);
-
   ctx.fillStyle = '#000000';
-  for (var row = 0; row < count; row++) {
-    for (var col = 0; col < count; col++) {
-      if (qr.isDark(row, col)) {
-        ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
-      }
-    }
-  }
-
+  for (var r = 0; r < count; r++)
+    for (var c = 0; c < count; c++)
+      if (qr.isDark(r, c))
+        ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
   container.appendChild(canvas);
-
-  var outputEl = document.getElementById('output');
-  outputEl.classList.remove('hidden');
-
-  var bytes = new Blob([text]).size;
+  document.getElementById('genOutput').classList.remove('hidden');
   document.getElementById('stats').textContent =
-    'Version ' + typeNum + ' (' + count + '\u00d7' + count + ') \u00b7 EC=' + ecLevel + ' \u00b7 ' + bytes + ' bytes \u00b7 ' + size + '\u00d7' + size + 'px';
-
+    'Version ' + typeNum + ' (' + count + '\u00d7' + count + ') \u00b7 EC=' + ecLevel + ' \u00b7 ' + new Blob([text]).size + ' bytes \u00b7 ' + size + '\u00d7' + size + 'px';
   document.getElementById('downloadBtn').disabled = false;
 }
 
-function download() {
+function downloadQR() {
   var canvas = document.querySelector('#qrContainer canvas');
   if (!canvas) return;
   var a = document.createElement('a');
   a.download = 'qrcode.png';
   a.href = canvas.toDataURL('image/png');
   a.click();
+}
+
+// --- Scanner ---
+var videoStream = null;
+var scanning = false;
+var animFrame = null;
+
+function toggleCamera() {
+  if (scanning) { stopCamera(); return; }
+  var btn = document.getElementById('cameraBtn');
+  btn.textContent = 'Starting...';
+  btn.disabled = true;
+
+  var constraints = { video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } } };
+  navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
+    videoStream = stream;
+    scanning = true;
+    var video = document.getElementById('scanVideo');
+    video.srcObject = stream;
+    video.play();
+    document.getElementById('scannerArea').classList.remove('hidden');
+    btn.textContent = 'Stop Camera';
+    btn.disabled = false;
+    btn.className = 'btn-danger';
+    btn.style.flex = '1';
+    setStatus('Scanning...');
+    requestAnimationFrame(scanFrame);
+  }).catch(function(err) {
+    btn.textContent = 'Start Camera';
+    btn.disabled = false;
+    setStatus('Camera error: ' + err.message);
+  });
+}
+
+function stopCamera() {
+  scanning = false;
+  if (animFrame) cancelAnimationFrame(animFrame);
+  if (videoStream) {
+    videoStream.getTracks().forEach(function(t) { t.stop(); });
+    videoStream = null;
+  }
+  var video = document.getElementById('scanVideo');
+  video.srcObject = null;
+  document.getElementById('scannerArea').classList.add('hidden');
+  var btn = document.getElementById('cameraBtn');
+  btn.textContent = 'Start Camera';
+  btn.className = 'btn-primary';
+  btn.disabled = false;
+}
+
+function scanFrame() {
+  if (!scanning) return;
+  var video = document.getElementById('scanVideo');
+  if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+    animFrame = requestAnimationFrame(scanFrame);
+    return;
+  }
+  var canvas = document.getElementById('scanCanvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  var ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0);
+  var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  var code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+  if (code) {
+    showResult(code.data);
+    stopCamera();
+    return;
+  }
+  animFrame = requestAnimationFrame(scanFrame);
+}
+
+// --- File upload ---
+var fileInput = document.getElementById('fileInput');
+var dropZone = document.getElementById('dropZone');
+
+fileInput.addEventListener('change', function() {
+  if (this.files[0]) decodeFile(this.files[0]);
+});
+
+dropZone.addEventListener('dragover', function(e) {
+  e.preventDefault();
+  this.classList.add('dragover');
+});
+dropZone.addEventListener('dragleave', function() {
+  this.classList.remove('dragover');
+});
+dropZone.addEventListener('drop', function(e) {
+  e.preventDefault();
+  this.classList.remove('dragover');
+  if (e.dataTransfer.files[0]) decodeFile(e.dataTransfer.files[0]);
+});
+
+function decodeFile(file) {
+  if (!file.type.startsWith('image/')) {
+    setStatus('Not an image file.');
+    return;
+  }
+  setStatus('Decoding...');
+  var img = new Image();
+  img.onload = function() {
+    var canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    var code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
+    if (code) {
+      showResult(code.data);
+    } else {
+      setStatus('No QR code found in image.');
+    }
+    URL.revokeObjectURL(img.src);
+  };
+  img.src = URL.createObjectURL(file);
+}
+
+// --- Result ---
+function showResult(text) {
+  document.getElementById('resultText').textContent = text;
+  document.getElementById('scanResult').classList.remove('hidden');
+  setStatus('QR code decoded!', true);
+}
+
+function copyResult() {
+  var text = document.getElementById('resultText').textContent;
+  navigator.clipboard.writeText(text).then(function() {
+    setStatus('Copied to clipboard!', true);
+  }).catch(function() {
+    // fallback: select text
+    var el = document.getElementById('resultText');
+    var range = document.createRange();
+    range.selectNodeContents(el);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    setStatus('Select and copy manually (Ctrl+C).');
+  });
+}
+
+function clearResult() {
+  document.getElementById('resultText').textContent = '';
+  document.getElementById('scanResult').classList.add('hidden');
+  setStatus('');
+  fileInput.value = '';
+}
+
+function setStatus(msg, success) {
+  var el = document.getElementById('scanStatus');
+  el.textContent = msg;
+  el.className = 'scan-status' + (success ? ' success' : '');
 }
 </script>
 </body>
