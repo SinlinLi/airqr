@@ -11,40 +11,42 @@ All processing happens in-browser — no data ever leaves your device.
 [![Static Badge](https://img.shields.io/badge/Dependencies-Zero-brightgreen)](https://github.com/SinlinLi/airqr)
 [![Static Badge](https://img.shields.io/badge/Network-Offline-blue)](https://github.com/SinlinLi/airqr)
 
+**English** | [简体中文](README.zh-CN.md) | [日本語](README.ja.md) | [한국어](README.ko.md)
+
 </div>
 
 ---
 
 ## What It Does
 
-- **Generate** — 文本/URL → QR 码，自动选择最小版本 (1–40)，可调纠错等级和模块大小
-- **Scan** — 摄像头实时扫描 + 图片上传解码（拖拽或点击选择）
-- **Split 3-Copy** — 扫描结果随机拆成 3 段分次复制，降低剪贴板被整体截获的风险
-- **Download** — QR 码导出为 PNG
-- **Keyboard** — `Ctrl/Cmd + Enter` 快速生成
+- **Generate** — Text/URL → QR code, auto-select minimal version (1–40), configurable error correction & module size
+- **Scan** — Real-time camera scanning + image upload decoding (drag & drop or click)
+- **Split 3-Copy** — Split scan results into 3 random segments for separate copying, reducing clipboard interception risk
+- **Download** — Export QR code as PNG
+- **Keyboard** — `Ctrl/Cmd + Enter` to generate
 
 ## Why AirQR?
 
-大多数 QR 工具会把数据发送到服务端。AirQR 不会——所有处理在浏览器内完成，**CSP 在协议层阻断一切外部连接**。
+Most QR tools send your data to a server. AirQR doesn't — all processing stays in-browser, with **CSP blocking all external connections at the protocol level**.
 
-适合处理私钥、助记词、密码、TOTP secret、API token 等敏感数据。
+Built for sensitive data: **private keys, seed phrases, passwords, TOTP secrets, API tokens.**
 
-### 安全模型
+### Security Model
 
-| 层 | 措施 |
-|----|------|
-| **CSP** | `default-src 'self'` — 禁止所有外部请求 |
-| **无存储** | 不使用 cookie、localStorage、analytics |
-| **零远程依赖** | 所有库本地打包，不加载 CDN |
-| **开源** | 单文件 HTML，可自行审计 |
+| Layer | Protection |
+|-------|-----------|
+| **CSP** | `default-src 'self'` — blocks all external requests |
+| **No Storage** | No cookies, no localStorage, no analytics |
+| **Zero Remote Dependencies** | All libraries bundled locally, no CDN |
+| **Open Source** | Single HTML file, audit it yourself |
 
-> **Tip**: 用无痕/隐私窗口打开可进一步隔离浏览器扩展。
+> **Tip**: Open in an **incognito/private window** to further isolate from browser extensions.
 
 ### Split 3-Copy
 
-剪贴板监控是一种常见的窃密手段——恶意软件静默监听每次复制操作，等待出现私钥或助记词格式的内容。
+Clipboard monitoring is a common attack — malware silently watches every copy operation, waiting for private keys or seed phrases.
 
-**Split 3-Copy** 将扫描结果随机拆分为 3 段（每段至少 15%），分次复制粘贴到目标输入框。即使剪贴板被监听，单次复制也不包含完整信息。每次拆分的切割位置随机，不可预测。
+**Split 3-Copy** randomly splits scan results into 3 segments (each at least 15%), so you paste them separately. Even if the clipboard is monitored, no single copy contains the full secret. Split boundaries are randomized each time.
 
 ## Quick Start
 
