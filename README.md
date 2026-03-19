@@ -32,12 +32,25 @@ Perfect for sensitive data: **private keys, seed phrases, passwords, TOTP secret
 
 > **Tip**: For maximum security, open in an **incognito/private window** to disable browser extensions that could read page content.
 
+## Split 3-Copy — Clipboard Leak Defense
+
+Clipboard monitoring malware silently watches your clipboard for private keys, seed phrases, and passwords. AirQR's **Split 3-Copy** breaks the full text into 3 random segments — each at least 15% of the total — so no single clipboard event ever holds the complete secret.
+
+**How it works:**
+
+1. Scan a QR code containing your secret
+2. Click **Split 3-Copy** — the text is randomly split into 3 parts
+3. Copy and paste each part separately into the target field
+
+Even if malware captures every clipboard write, it only gets disconnected fragments with randomized boundaries. Re-splitting produces different cuts each time.
+
 ## Features
 
 - **Generate** — text/URL → QR code, auto-detect optimal version (1–40), configurable error correction (L/M/Q/H) & module size
 - **Scan (Camera)** — real-time camera decoding, mobile rear camera preferred
 - **Scan (File)** — drag & drop or click to select image
 - **Copy & Download** — one-click copy decoded text or download QR as PNG
+- **Split 3-Copy** — split scanned text into 3 random segments for separate pasting, defeating clipboard monitoring
 - **Keyboard** — `Ctrl/Cmd + Enter` to generate
 - **Responsive** — works on desktop & mobile, dark theme
 
