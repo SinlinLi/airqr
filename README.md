@@ -15,44 +15,36 @@ All processing happens in-browser — no data ever leaves your device.
 
 ---
 
+## What It Does
+
+- **Generate** — 文本/URL → QR 码，自动选择最小版本 (1–40)，可调纠错等级和模块大小
+- **Scan** — 摄像头实时扫描 + 图片上传解码（拖拽或点击选择）
+- **Split 3-Copy** — 扫描结果随机拆成 3 段分次复制，降低剪贴板被整体截获的风险
+- **Download** — QR 码导出为 PNG
+- **Keyboard** — `Ctrl/Cmd + Enter` 快速生成
+
 ## Why AirQR?
 
-Most QR tools send your data to a server. AirQR doesn't. It runs entirely in your browser with **zero network requests** — enforced by Content Security Policy at the protocol level.
+大多数 QR 工具会把数据发送到服务端。AirQR 不会——所有处理在浏览器内完成，**CSP 在协议层阻断一切外部连接**。
 
-Perfect for sensitive data: **private keys, seed phrases, passwords, TOTP secrets, API tokens.**
+适合处理私钥、助记词、密码、TOTP secret、API token 等敏感数据。
 
-## Security Model
+### 安全模型
 
-| Layer | Protection |
-|-------|-----------|
-| **CSP Header** | `default-src 'self'` — blocks all external connections |
-| **No Storage** | No cookies, no localStorage, no analytics |
-| **No Dependencies** | All libraries bundled locally, no CDN |
-| **Open Source** | Audit every line yourself |
+| 层 | 措施 |
+|----|------|
+| **CSP** | `default-src 'self'` — 禁止所有外部请求 |
+| **无存储** | 不使用 cookie、localStorage、analytics |
+| **零远程依赖** | 所有库本地打包，不加载 CDN |
+| **开源** | 单文件 HTML，可自行审计 |
 
-> **Tip**: For maximum security, open in an **incognito/private window** to disable browser extensions that could read page content.
+> **Tip**: 用无痕/隐私窗口打开可进一步隔离浏览器扩展。
 
-## Split 3-Copy — Clipboard Leak Defense
+### Split 3-Copy
 
-Clipboard monitoring malware silently watches your clipboard for private keys, seed phrases, and passwords. AirQR's **Split 3-Copy** breaks the full text into 3 random segments — each at least 15% of the total — so no single clipboard event ever holds the complete secret.
+剪贴板监控是一种常见的窃密手段——恶意软件静默监听每次复制操作，等待出现私钥或助记词格式的内容。
 
-**How it works:**
-
-1. Scan a QR code containing your secret
-2. Click **Split 3-Copy** — the text is randomly split into 3 parts
-3. Copy and paste each part separately into the target field
-
-Even if malware captures every clipboard write, it only gets disconnected fragments with randomized boundaries. Re-splitting produces different cuts each time.
-
-## Features
-
-- **Generate** — text/URL → QR code, auto-detect optimal version (1–40), configurable error correction (L/M/Q/H) & module size
-- **Scan (Camera)** — real-time camera decoding, mobile rear camera preferred
-- **Scan (File)** — drag & drop or click to select image
-- **Copy & Download** — one-click copy decoded text or download QR as PNG
-- **Split 3-Copy** — split scanned text into 3 random segments for separate pasting, defeating clipboard monitoring
-- **Keyboard** — `Ctrl/Cmd + Enter` to generate
-- **Responsive** — works on desktop & mobile, dark theme
+**Split 3-Copy** 将扫描结果随机拆分为 3 段（每段至少 15%），分次复制粘贴到目标输入框。即使剪贴板被监听，单次复制也不包含完整信息。每次拆分的切割位置随机，不可预测。
 
 ## Quick Start
 
