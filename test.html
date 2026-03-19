@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>AirQR Tests</title>
+<style>
+body { font-family: monospace; background: #111; color: #eee; padding: 2rem; }
+.pass { color: #10b981; }
+.fail { color: #ef4444; font-weight: bold; }
+pre { margin: 0.5rem 0; padding: 0.5rem; background: #1a1a1a; border-radius: 4px; overflow-x: auto; }
+h2 { margin-top: 1.5rem; color: #737373; font-size: 0.9rem; text-transform: uppercase; }
+#summary { margin-top: 2rem; padding: 1rem; border-radius: 8px; font-size: 1.1rem; }
+#summary.all-pass { background: #052e16; color: #10b981; }
+#summary.has-fail { background: #450a0a; color: #ef4444; }
+</style>
+</head>
+<body>
+<h1>AirQR Unit Tests</h1>
+<div id="output"></div>
+<div id="summary"></div>
+
+<script>
+var passed = 0, failed = 0;
+var output = document.getElementById('output');
+
+function assert(condition, name, detail) {
+  if (condition) {
+    passed++;
+    output.innerHTML += '<div class="pass">PASS: ' + name + '</div>';
+  } else {
+    failed++;
+    output.innerHTML += '<div class="fail">FAIL: ' + name + (detail ? '\n  ' + detail : '') + '</div>';
+  }
+}
+
+function assertEq(actual, expected, name) {
+  var ok = actual === expected;
+  assert(ok, name, ok ? '' : 'expected ' + JSON.stringify(expected) + ', got ' + JSON.stringify(actual));
+}
+
+// === splitText3 (extracted from index.html) ===
+
+function splitText3(text) {
+  var len = text.length;
+  if (len < 3) return [text];
+  var base = Math.max(1, Math.floor(len * 0.15));
+  var extra = len - base * 3;
+  var r1 = Math.floor(Math.random() * (extra + 1));
+  var r2 = Math.floor(Math.random() * (extra - r1 + 1));
+  var s = [base + r1, base + r2, base + (extra - r1 - r2)];
+  return [text.slice(0, s[0]), text.slice(s[0], s[0] + s[1]), text.slice(s[0] + s[1])];
+}
+
+// --- splitText3: basic ---
+output.innerHTML += '<h2>splitText3 — Basic</h2>';
+
+(function() {
+  var parts = splitText3('abcdefghij');
+  assertEq(parts.length, 3, 'returns 3 parts');
+  assertEq(parts.join(''), 'abcdefghij', 'concatenation matches original');
+})();
+
+// --- splitText3: short text fallback ---
+output.innerHTML += '<h2>splitText3 — Short Text Fallback</h2>';
+
+(function() {
+  var r1 = splitText3('a');
+  assertEq(r1.length, 1, 'len=1 returns 1 part');
+  assertEq(r1[0], 'a', 'len=1 content correct');
+
+  var r2 = splitText3('ab');
+  assertEq(r2.length, 1, 'len=2 returns 1 part');
+  assertEq(r2[0], 'ab', 'len=2 content correct');
+
+  var r0 = splitText3('');
+  assertEq(r0.length, 1, 'len=0 returns 1 part');
+  assertEq(r0[0], '', 'len=0 content is empty string');
+})();
+
+// --- splitText3: minimum length 3 ---
+output.innerHTML += '<h2>splitText3 — Minimum Splittable (len=3)</h2>';
+
+(function() {
+  for (var i = 0; i < 50; i++) {
+    var parts = splitText3('abc');
+    if (parts.length !== 3 || parts.join('') !== 'abc' || parts.some(function(p) { return p.length < 1; })) {
+      assert(false, 'len=3 trial ' + i, JSON.stringify(parts));
+      return;
+    }
+  }
+  assert(true, 'len=3: 50 trials, always 3 parts each >= 1 char');
+})();
+
+// --- splitText3: each part >= 1 char ---
+output.innerHTML += '<h2>splitText3 — Min 1 Char Per Part</h2>';
+
+(function() {
+  var lengths = [3, 4, 5, 6, 7, 10, 20, 50, 100];
+  for (var li = 0; li < lengths.length; li++) {
+    var len = lengths[li];
+    var text = '';
+    for (var j = 0; j < len; j++) text += String.fromCharCode(97 + (j % 26));
+    var ok = true;
+    for (var t = 0; t < 100; t++) {
+      var parts = splitText3(text);
+      if (parts.length !== 3 || parts.join('') !== text || parts.some(function(p) { return p.length < 1; })) {
+        ok = false; break;
+      }
+    }
+    assert(ok, 'len=' + len + ': 100 trials, all parts >= 1 char');
+  }
+})();
+
+// --- splitText3: each part >= 15% (for len >= 7, where floor(len*0.15) >= 1) ---
+output.innerHTML += '<h2>splitText3 — Min 15% Per Part</h2>';
+
+(function() {
+  var lengths = [7, 10, 20, 50, 100, 200, 500];
+  for (var li = 0; li < lengths.length; li++) {
+    var len = lengths[li];
+    var text = '';
+    for (var j = 0; j < len; j++) text += String.fromCharCode(97 + (j % 26));
+    var base = Math.max(1, Math.floor(len * 0.15));
+    var minFound = len;
+    var ok = true;
+    for (var t = 0; t < 200; t++) {
+      var parts = splitText3(text);
+      if (parts.join('') !== text) { ok = false; break; }
+      for (var p = 0; p < 3; p++) {
+        if (parts[p].length < base) { ok = false; break; }
+        if (parts[p].length < minFound) minFound = parts[p].length;
+      }
+      if (!ok) break;
+    }
+    assert(ok, 'len=' + len + ': 200 trials, all parts >= ' + base + ' chars (15% floor)');
+  }
+})();
+
+// --- splitText3: randomness (not always the same split) ---
+output.innerHTML += '<h2>splitText3 — Randomness</h2>';
+
+(function() {
+  var text = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  var seen = {};
+  for (var i = 0; i < 50; i++) {
+    var parts = splitText3(text);
+    var key = parts[0].length + ',' + parts[1].length;
+    seen[key] = true;
+  }
+  var uniqueSplits = Object.keys(seen).length;
+  assert(uniqueSplits > 1, 'produces varying splits (' + uniqueSplits + ' unique patterns in 50 trials)');
+})();
+
+// --- splitText3: unicode handling ---
+output.innerHTML += '<h2>splitText3 — Unicode</h2>';
+
+(function() {
+  var text = '你好世界测试文本这是一个测试';
+  var parts = splitText3(text);
+  assertEq(parts.join(''), text, 'CJK characters: concatenation matches');
+  assertEq(parts.length, 3, 'CJK characters: returns 3 parts');
+  assert(parts.every(function(p) { return p.length >= 1; }), 'CJK characters: each part >= 1 char');
+})();
+
+(function() {
+  var text = 'abc\ndef\nghi\njkl';
+  var parts = splitText3(text);
+  assertEq(parts.join(''), text, 'text with newlines: concatenation matches');
+})();
+
+// --- splitText3: stress test ---
+output.innerHTML += '<h2>splitText3 — Stress (10K trials)</h2>';
+
+(function() {
+  var text = '';
+  for (var i = 0; i < 200; i++) text += String.fromCharCode(33 + (i % 94));
+  var failures = 0;
+  for (var t = 0; t < 10000; t++) {
+    var parts = splitText3(text);
+    if (parts.length !== 3 || parts.join('') !== text || parts.some(function(p) { return p.length < 1; })) {
+      failures++;
+    }
+  }
+  assertEq(failures, 0, '10,000 trials on 200-char text: ' + failures + ' failures');
+})();
+
+// === Summary ===
+var summary = document.getElementById('summary');
+summary.textContent = passed + ' passed, ' + failed + ' failed';
+summary.className = failed === 0 ? 'all-pass' : 'has-fail';
+document.title = (failed === 0 ? 'PASS' : 'FAIL') + ' — AirQR Tests';
+</script>
+</body>
+</html>
