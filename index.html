@@ -36,18 +36,12 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 .btn-primary { background: var(--accent); color: #000; }
 .btn-secondary { background: var(--border); color: var(--text); }
 .btn-danger { background: var(--danger); color: #fff; }
+.btn-sm { padding: 0.4rem 0.6rem; font-size: 0.8rem; flex: none; }
 .output { margin-top: 1.5rem; text-align: center; }
 .qr-container { display: inline-block; background: #fff; padding: 16px; border-radius: 8px; }
 .qr-container canvas { display: block; }
 .stats { margin-top: 0.75rem; font-size: 0.8rem; color: var(--muted); }
 .char-count { text-align: right; font-size: 0.75rem; color: var(--muted); margin-top: 0.25rem; }
-.toggle-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; font-size: 0.85rem; cursor: pointer; user-select: none; color: var(--muted); }
-.toggle-row input { accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer; }
-.toggle-row.active { color: var(--text); }
-.split-output { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; margin-top: 1.5rem; }
-.split-part { text-align: center; }
-.split-part .part-label { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.4rem; }
-.split-part .qr-container { padding: 10px; }
 .hidden { display: none; }
 
 /* Scanner */
@@ -58,10 +52,16 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 .drop-zone { border: 2px dashed var(--border); border-radius: 8px; padding: 2rem; text-align: center; color: var(--muted); cursor: pointer; transition: border-color 0.2s; }
 .drop-zone:hover, .drop-zone.dragover { border-color: var(--accent); color: var(--text); }
 .drop-zone input { display: none; }
-.result-box { margin-top: 1rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; word-break: break-all; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.9rem; text-align: left; max-height: 200px; overflow-y: auto; user-select: all; }
+.result-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; word-break: break-all; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.9rem; text-align: left; max-height: 200px; overflow-y: auto; user-select: all; }
 .result-actions { display: flex; gap: 0.75rem; margin-top: 0.75rem; }
 .scan-status { margin-top: 0.75rem; font-size: 0.8rem; color: var(--muted); text-align: center; }
 .scan-status.success { color: var(--accent); }
+
+/* Split parts */
+.split-parts { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.split-part { display: flex; align-items: center; gap: 0.5rem; }
+.split-part .part-label { font-size: 0.7rem; color: var(--muted); white-space: nowrap; min-width: 2.5rem; }
+.split-part .part-text { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem; word-break: break-all; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.85rem; user-select: all; }
 
 /* Badge & Footer */
 .badge { display: inline-flex; align-items: center; gap: 0.4rem; background: #052e16; color: var(--accent); font-size: 0.75rem; padding: 0.3rem 0.7rem; border-radius: 20px; margin-top: 1.5rem; }
@@ -102,9 +102,6 @@ footer a { color: var(--accent); text-decoration: none; }
       <input type="number" id="cellSize" value="8" min="2" max="20">
     </div>
   </div>
-  <label class="toggle-row" id="splitToggle">
-    <input type="checkbox" id="splitMode"> Split into 3 parts (random cut, min 15% each)
-  </label>
   <div class="actions">
     <button class="btn-primary" onclick="generate()">Generate</button>
     <button class="btn-secondary" id="downloadBtn" onclick="downloadQR()" disabled>Download PNG</button>
@@ -113,7 +110,6 @@ footer a { color: var(--accent); text-decoration: none; }
     <div class="qr-container" id="qrContainer"></div>
     <div class="stats" id="stats"></div>
   </div>
-  <div class="split-output hidden" id="splitOutput"></div>
 </div>
 
 <!-- Scan Tab -->
@@ -146,10 +142,12 @@ footer a { color: var(--accent); text-decoration: none; }
       <label>Result</label>
       <div class="result-box" id="resultText"></div>
       <div class="result-actions">
-        <button class="btn-primary" onclick="copyResult()">Copy</button>
+        <button class="btn-primary" onclick="copyResult()">Copy All</button>
+        <button class="btn-secondary" onclick="splitCopy()">Split 3-Copy</button>
         <button class="btn-secondary" onclick="clearResult()">Clear</button>
       </div>
     </div>
+    <div class="split-parts hidden" id="splitParts"></div>
   </div>
   <div class="scan-status" id="scanStatus"></div>
 </div>
@@ -157,14 +155,14 @@ footer a { color: var(--accent); text-decoration: none; }
 <div class="badge">Offline &amp; Secure — CSP blocks all external connections</div>
 
 <footer>
-  <p>Generate: <a href="https://github.com/nickelc/qrloop">qrcode-generator</a> (MIT) &middot; Scan: <a href="https://github.com/nickelc/qrloop">jsQR</a> (Apache-2.0)</p>
+  <p>Generate: <a href="https://github.com/kazuhikoarase/qrcode-generator">qrcode-generator</a> (MIT) &middot; Scan: <a href="https://github.com/cozmo/jsQR">jsQR</a> (Apache-2.0)</p>
   <p><a href="https://github.com/SinlinLi/airqr">Source on GitHub</a></p>
 </footer>
 
 <script src="qrcode.min.js"></script>
 <script src="jsqr.min.js"></script>
 <script>
-// --- DOM refs (cached once, no repeated getElementById) ---
+// --- DOM refs ---
 var $ = document.getElementById.bind(document);
 var refs = {
   input: $('input'), charCount: $('charCount'), byteCount: $('byteCount'),
@@ -173,20 +171,14 @@ var refs = {
   generateTab: $('generateTab'), scanTab: $('scanTab'),
   scannerArea: $('scannerArea'), scanVideo: $('scanVideo'), scanCanvas: $('scanCanvas'),
   cameraBtn: $('cameraBtn'), fileInput: $('fileInput'), dropZone: $('dropZone'),
-  scanResult: $('scanResult'), resultText: $('resultText'), scanStatus: $('scanStatus')
+  scanResult: $('scanResult'), resultText: $('resultText'), scanStatus: $('scanStatus'),
+  splitParts: $('splitParts')
 };
-
-refs.splitMode = $('splitMode');
-refs.splitOutput = $('splitOutput');
-refs.splitToggle = $('splitToggle');
 
 var cameraSupported = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
 var videoStream = null;
 var animFrame = null;
-
-refs.splitMode.addEventListener('change', function() {
-  refs.splitToggle.classList.toggle('active', this.checked);
-});
+var lastDecodedText = '';
 
 // --- Tabs ---
 function switchTab(tab) {
@@ -238,37 +230,14 @@ function renderQR(qr, cellSize) {
   return canvas;
 }
 
-function splitText3(text) {
-  // Random split: each part gets at least 15%, remaining 55% distributed randomly.
-  var len = text.length;
-  var base = Math.max(1, Math.floor(len * 0.15));
-  var extra = len - base * 3;
-  // Distribute extra chars randomly among 3 parts (simplex sampling)
-  var r1 = Math.floor(Math.random() * (extra + 1));
-  var r2 = Math.floor(Math.random() * (extra - r1 + 1));
-  var sizes = [base + r1, base + r2, base + (extra - r1 - r2)];
-  return [text.slice(0, sizes[0]), text.slice(sizes[0], sizes[0] + sizes[1]), text.slice(sizes[0] + sizes[1])];
-}
-
 function generate() {
   var text = refs.input.value;
   if (!text) return;
 
-  var ecLevel = refs.ecLevel.value;
-  var cellSize = parseInt(refs.cellSize.value) || 8;
-
-  if (refs.splitMode.checked && text.length >= 3) {
-    generateSplit(text, ecLevel, cellSize);
-  } else {
-    generateSingle(text, ecLevel, cellSize);
-  }
-}
-
-function generateSingle(text, ecLevel, cellSize) {
-  refs.splitOutput.classList.add('hidden');
-  var result = findMinQR(text, ecLevel);
+  var result = findMinQR(text, refs.ecLevel.value);
   if (!result) { alert('Data too large for QR code.'); return; }
 
+  var cellSize = parseInt(refs.cellSize.value) || 8;
   var canvas = renderQR(result.qr, cellSize);
   var count = result.qr.getModuleCount();
 
@@ -276,61 +245,21 @@ function generateSingle(text, ecLevel, cellSize) {
   refs.qrContainer.appendChild(canvas);
   refs.genOutput.classList.remove('hidden');
   refs.stats.textContent = 'Version ' + result.version + ' (' + count + '\u00d7' + count
-    + ') \u00b7 EC=' + ecLevel + ' \u00b7 ' + new Blob([text]).size
+    + ') \u00b7 EC=' + refs.ecLevel.value + ' \u00b7 ' + new Blob([text]).size
     + ' bytes \u00b7 ' + canvas.width + '\u00d7' + canvas.height + 'px';
   refs.downloadBtn.disabled = false;
 }
 
-function generateSplit(text, ecLevel, cellSize) {
-  refs.genOutput.classList.add('hidden');
-  var parts = splitText3(text);
-  refs.splitOutput.innerHTML = '';
-
-  for (var i = 0; i < 3; i++) {
-    var result = findMinQR(parts[i], ecLevel);
-    if (!result) { alert('Part ' + (i + 1) + ' too large for QR code.'); return; }
-    var canvas = renderQR(result.qr, cellSize);
-    var div = document.createElement('div');
-    div.className = 'split-part';
-    var label = document.createElement('div');
-    label.className = 'part-label';
-    label.textContent = 'Part ' + (i + 1) + ' (' + parts[i].length + ' chars)';
-    var wrap = document.createElement('div');
-    wrap.className = 'qr-container';
-    wrap.appendChild(canvas);
-    div.appendChild(label);
-    div.appendChild(wrap);
-    refs.splitOutput.appendChild(div);
-  }
-
-  refs.splitOutput.classList.remove('hidden');
-  refs.downloadBtn.disabled = false;
-}
-
 function downloadQR() {
-  if (refs.splitMode.checked) {
-    // Download all 3 parts
-    var canvases = refs.splitOutput.querySelectorAll('canvas');
-    canvases.forEach(function(canvas, i) {
-      var a = document.createElement('a');
-      a.download = 'qrcode-part' + (i + 1) + '.png';
-      a.href = canvas.toDataURL('image/png');
-      a.click();
-    });
-  } else {
-    var canvas = refs.qrContainer.querySelector('canvas');
-    if (!canvas) return;
-    var a = document.createElement('a');
-    a.download = 'qrcode.png';
-    a.href = canvas.toDataURL('image/png');
-    a.click();
-  }
+  var canvas = refs.qrContainer.querySelector('canvas');
+  if (!canvas) return;
+  var a = document.createElement('a');
+  a.download = 'qrcode.png';
+  a.href = canvas.toDataURL('image/png');
+  a.click();
 }
 
 // --- Camera ---
-// Camera requires HTTPS (or localhost). On plain HTTP, navigator.mediaDevices is undefined.
-// Instead of silently failing, we tell the user why.
-
 function startCamera() {
   if (!cameraSupported) {
     setStatus('Camera requires HTTPS. Try localhost or add a certificate.');
@@ -399,7 +328,6 @@ function decodeFromVideo(video) {
 
 // --- File decode ---
 function decodeFromImage(file) {
-  // file.type can be empty on some mobile browsers, so only reject known non-image types
   if (file.type && !file.type.startsWith('image/')) { setStatus('Not an image file.'); return; }
   setStatus('Decoding...');
   var url = URL.createObjectURL(file);
@@ -436,36 +364,76 @@ refs.dropZone.addEventListener('drop', function(e) {
 
 // --- Result ---
 function showResult(text) {
+  lastDecodedText = text;
   refs.resultText.textContent = text;
   refs.scanResult.classList.remove('hidden');
+  refs.splitParts.classList.add('hidden');
   setStatus('QR code decoded!', true);
 }
 
-function copyResult() {
-  var text = refs.resultText.textContent;
+function copyToClipboard(text, label) {
   try {
-    // clipboard API may exist but reject on HTTP (non-secure context)
     navigator.clipboard.writeText(text).then(
-      function() { setStatus('Copied!', true); },
-      function() { selectResultText(); }
+      function() { setStatus('Copied' + (label ? ' ' + label : '') + '!', true); },
+      function() { setStatus('Clipboard not available on HTTP.'); }
     );
   } catch (e) {
-    selectResultText();
+    setStatus('Clipboard not available on HTTP.');
   }
 }
 
-function selectResultText() {
-  var range = document.createRange();
-  range.selectNodeContents(refs.resultText);
-  var sel = window.getSelection();
-  sel.removeAllRanges();
-  sel.addRange(range);
-  setStatus('Select and copy manually (Ctrl+C).');
+function copyResult() {
+  copyToClipboard(lastDecodedText, '');
+}
+
+function splitText3(text) {
+  var len = text.length;
+  if (len < 3) return [text];
+  var base = Math.max(1, Math.floor(len * 0.15));
+  var extra = len - base * 3;
+  var r1 = Math.floor(Math.random() * (extra + 1));
+  var r2 = Math.floor(Math.random() * (extra - r1 + 1));
+  var s = [base + r1, base + r2, base + (extra - r1 - r2)];
+  return [text.slice(0, s[0]), text.slice(s[0], s[0] + s[1]), text.slice(s[0] + s[1])];
+}
+
+function splitCopy() {
+  if (!lastDecodedText) return;
+  var parts = splitText3(lastDecodedText);
+
+  refs.splitParts.innerHTML = '';
+  parts.forEach(function(part, i) {
+    var row = document.createElement('div');
+    row.className = 'split-part';
+
+    var label = document.createElement('span');
+    label.className = 'part-label';
+    label.textContent = (i + 1) + '/' + parts.length;
+
+    var textEl = document.createElement('div');
+    textEl.className = 'part-text';
+    textEl.textContent = part;
+
+    var btn = document.createElement('button');
+    btn.className = 'btn-primary btn-sm';
+    btn.textContent = 'Copy';
+    btn.onclick = function() { copyToClipboard(part, 'Part ' + (i + 1)); };
+
+    row.appendChild(label);
+    row.appendChild(textEl);
+    row.appendChild(btn);
+    refs.splitParts.appendChild(row);
+  });
+
+  refs.splitParts.classList.remove('hidden');
+  setStatus('Split into ' + parts.length + ' parts. Copy each separately.', true);
 }
 
 function clearResult() {
+  lastDecodedText = '';
   refs.resultText.textContent = '';
   refs.scanResult.classList.add('hidden');
+  refs.splitParts.classList.add('hidden');
   setStatus('');
   refs.fileInput.value = '';
 }
@@ -475,7 +443,7 @@ function setStatus(msg, success) {
   refs.scanStatus.className = 'scan-status' + (success ? ' success' : '');
 }
 
-// Init: disable camera button if not supported
+// Init
 if (!cameraSupported) {
   refs.cameraBtn.textContent = 'Camera (HTTPS required)';
   refs.cameraBtn.className = 'btn-secondary';
