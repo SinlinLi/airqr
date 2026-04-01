@@ -82,6 +82,10 @@ npx serve -p 1234
 - QR generation: [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) by Kazuhiko Arase (MIT)
 - QR scanning: [jsQR](https://github.com/cozmo/jsQR) by cozmo (Apache-2.0)
 
+## See also
+
+- [Airbox](https://github.com/SinlinLi/airbox) — Browser-side RSA encryption tool
+
 ## License
 
 [MIT](LICENSE)

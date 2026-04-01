@@ -68,12 +68,13 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 .badge::before { content: ''; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
 footer { margin-top: 1.5rem; font-size: 0.75rem; color: var(--muted); text-align: center; line-height: 1.6; }
 footer a { color: var(--accent); text-decoration: none; }
+.air-family { margin-top: 0.25rem; }
 </style>
 </head>
 <body>
 
 <h1>AirQR</h1>
-<p class="subtitle">Air-gapped QR tool. All data stays in your browser.</p>
+<p class="subtitle">QR code generator &amp; scanner. All data stays in your browser.</p>
 
 <div class="tabs">
   <button class="tab active" onclick="switchTab('generate')">Generate</button>
@@ -157,6 +158,7 @@ footer a { color: var(--accent); text-decoration: none; }
 <footer>
   <p>Generate: <a href="https://github.com/kazuhikoarase/qrcode-generator">qrcode-generator</a> (MIT) &middot; Scan: <a href="https://github.com/cozmo/jsQR">jsQR</a> (Apache-2.0)</p>
   <p><a href="https://github.com/SinlinLi/airqr">Source on GitHub</a></p>
+  <p class="air-family">Air toolkit: <strong>AirQR</strong> &middot; <a href="https://sinlinli.github.io/airbox/">Airbox</a></p>
 </footer>
 
 <script src="qrcode.min.js"></script>
