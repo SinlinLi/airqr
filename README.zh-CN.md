@@ -6,6 +6,8 @@
 
 所有处理在浏览器内完成——数据不会离开你的设备。
 
+**在线使用：** https://sinlinli.github.io/airqr/
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/SinlinLi/airqr?style=social)](https://github.com/SinlinLi/airqr)
 [![Static Badge](https://img.shields.io/badge/Dependencies-Zero-brightgreen)](https://github.com/SinlinLi/airqr)

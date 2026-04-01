@@ -6,6 +6,8 @@
 
 모든 처리는 브라우저 내에서 완료됩니다 — 데이터가 기기 밖으로 나가지 않습니다.
 
+**지금 사용하기:** https://sinlinli.github.io/airqr/
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/SinlinLi/airqr?style=social)](https://github.com/SinlinLi/airqr)
 [![Static Badge](https://img.shields.io/badge/Dependencies-Zero-brightgreen)](https://github.com/SinlinLi/airqr)
